@@ -6,10 +6,10 @@
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_BIN="python3"
 PORT=8080
-URL="http://localhost:${PORT}/upload"
+URL="http://localhost:${PORT}/examples/lane_digitize.html"
 LOG_FILE="/tmp/lane_digitize_server.log"
 
-if ! curl -s -o /dev/null "http://localhost:${PORT}/upload"; then
+if ! curl -s -o /dev/null "$URL"; then
 	echo "Starting backend server..."
 	cd "$REPO_ROOT" || exit 1
 	nohup "$PYTHON_BIN" webapp/server.py > "$LOG_FILE" 2>&1 &

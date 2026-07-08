@@ -99,11 +99,17 @@
 			<li id="navigation"></li>
 
 			<li><span data-i18n="appearance.move_speed"></span>: <span id="lblMoveSpeed"></span><div id="sldMoveSpeed"></div></li>
+			<li><label><input type="checkbox" id="chkMoveSpeedAutoAdjust" />Auto-adjust speed on zoom</label></li>
 		</div>
 
 		<!-- SCENE -->
 		<h3 id="menu_scene"><span data-i18n="tb.scene_opt"></span></h3>
 		<div class="pv-menu-list">
+
+			<div id="scene_import">
+				Import LAS/LAZ: <br>
+				<input type="file" id="las_import_input" accept=".las,.laz" multiple />
+			</div>
 
 			<div id="scene_export"></div>
 

@@ -35,20 +35,29 @@
 
 	<script type="module">
 
-		const dataset = new URLSearchParams(window.location.search).get("dataset");
+		// dataset(s) can optionally be pre-loaded via ?dataset=id1,id2 - otherwise the
+		// viewer starts empty and LAS/LAZ files are uploaded from the sidebar's Import panel.
+		const datasetParam = new URLSearchParams(window.location.search).get("dataset");
+		const datasets = datasetParam ? datasetParam.split(",") : [];
 
-		if (!dataset) {
-			window.location.href = "/upload";
-			throw new Error("no dataset specified, redirecting to /upload");
+		const metas = await Promise.all(datasets.map(async dataset => {
+			const datasetPath = `/pointclouds/${dataset}`;
+			const meta = await (await fetch(`${datasetPath}/potree_meta.json`)).json();
+			return {dataset, datasetPath, meta};
+		}));
+
+		if (metas.length > 0) {
+			// proj4 has no built-in EPSG database - register whatever CRS the backend detected for each dataset
+			for (const {meta} of metas) {
+				proj4.defs(meta.epsg, meta.proj4);
+			}
+
+			// SHP export uses a single global CRS - use the first dataset's, and warn if they differ
+			window.datasetMeta = metas[0].meta;
+			if (metas.some(({meta}) => meta.epsg !== metas[0].meta.epsg)) {
+				console.warn("Uploaded datasets have different EPSG codes; SHP export will use " + metas[0].meta.epsg);
+			}
 		}
-
-		const datasetPath = `../pointclouds/${dataset}`;
-
-		const meta = await (await fetch(`${datasetPath}/potree_meta.json`)).json();
-		window.datasetMeta = meta;
-
-		// proj4 has no built-in EPSG database - register whatever CRS the backend detected
-		proj4.defs(meta.epsg, meta.proj4);
 
 		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
 
@@ -58,7 +67,9 @@
 		viewer.loadSettingsFromURL();
 		viewer.setBackground("gradient");
 
-		viewer.setDescription(`${meta.sourceFile} - ${meta.epsg}`);
+		if (metas.length > 0) {
+			viewer.setDescription(metas.map(({meta}) => `${meta.sourceFile} - ${meta.epsg}`).join(" | "));
+		}
 
 		viewer.loadGUI(() => {
 			viewer.setLanguage('en');
@@ -71,9 +82,11 @@
 		// class 1 = unclassified (buildings, trees, etc - from PDAL filters.smrf), class 2 = ground/road surface
 		viewer.setClassifications(Potree.ClassificationScheme.DEFAULT);
 
-		Potree.loadPointCloud(`${datasetPath}/metadata.json`, dataset, e => {
+		const promises = metas.map(({dataset, datasetPath}) => Potree.loadPointCloud(`${datasetPath}/metadata.json`, dataset));
+
+		for (const promise of promises) {
 			let scene = viewer.scene;
-			let pointcloud = e.pointcloud;
+			let pointcloud = (await promise).pointcloud;
 
 			let material = pointcloud.material;
 			material.size = 1;
@@ -82,9 +95,11 @@
 			material.activeAttributeName = "rgba";
 
 			scene.addPointCloud(pointcloud);
+		}
 
+		if (metas.length > 0) {
 			viewer.fitToScreen();
-		});
+		}
 
 	</script>
 

@@ -304,6 +304,7 @@ export class Viewer extends EventDispatcher{
 			this.setPointBudget(1*1000*1000);
 			this.setShowBoundingBox(false);
 			this.setFreeze(false);
+			this.setMoveSpeedAutoAdjust(false);
 			this.setControls(this.orbitControls);
 			this.setBackground('gradient');
 
@@ -506,6 +507,19 @@ export class Viewer extends EventDispatcher{
 
 	getMoveSpeed () {
 		return this.moveSpeed;
+	};
+
+	setMoveSpeedAutoAdjust (value) {
+		value = Boolean(value);
+
+		if (this.moveSpeedAutoAdjust !== value) {
+			this.moveSpeedAutoAdjust = value;
+			this.dispatchEvent({'type': 'move_speed_auto_adjust_changed', 'viewer': this, 'value': value});
+		}
+	};
+
+	getMoveSpeedAutoAdjust () {
+		return this.moveSpeedAutoAdjust;
 	};
 
 	setWeightClassification (w) {

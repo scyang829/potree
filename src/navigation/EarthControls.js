@@ -78,8 +78,10 @@ export class EarthControls extends EventDispatcher {
 					{
 						let distance = newCamPos.distanceTo(this.pivot);
 						view.radius = distance;
-						let speed = view.radius / 2.5;
-						this.viewer.setMoveSpeed(speed);
+						if(this.viewer.getMoveSpeedAutoAdjust()){
+							let speed = view.radius / 2.5;
+							this.viewer.setMoveSpeed(speed);
+						}
 					}
 				}
 			} else if (e.drag.mouse === MOUSE.RIGHT) {
@@ -218,7 +220,9 @@ export class EarthControls extends EventDispatcher {
 				this.scene.view.position.z = (1 - t) * startPos.z + t * targetPos.z;
 
 				this.scene.view.radius = (1 - t) * startRadius + t * targetRadius;
-				this.viewer.setMoveSpeed(this.scene.view.radius / 2.5);
+				if(this.viewer.getMoveSpeedAutoAdjust()){
+					this.viewer.setMoveSpeed(this.scene.view.radius / 2.5);
+				}
 			});
 
 			tween.onComplete(() => {
@@ -256,8 +260,10 @@ export class EarthControls extends EventDispatcher {
 				{
 					let distance = resolvedPos.distanceTo(I.location);
 					view.radius = distance;
-					let speed = view.radius / 2.5;
-					this.viewer.setMoveSpeed(speed);
+					if(this.viewer.getMoveSpeedAutoAdjust()){
+						let speed = view.radius / 2.5;
+						this.viewer.setMoveSpeed(speed);
+					}
 				}
 			}
 		}

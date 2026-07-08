@@ -324,7 +324,65 @@ export class Sidebar{
 		let elScene = $("#menu_scene");
 		let elObjects = elScene.next().find("#scene_objects");
 		let elProperties = elScene.next().find("#scene_object_properties");
-		
+
+
+		{
+			let elImport = elScene.next().find("#scene_import");
+			let inputImport = elImport.find("input[type=file]");
+
+			inputImport.change(async (event) => {
+				const files = Array.from(event.target.files);
+				if(files.length === 0){
+					return;
+				}
+
+				inputImport.prop("disabled", true);
+
+				for(const file of files){
+					let message = this.viewer.postMessage(`Uploading and processing ${file.name}...`);
+
+					try{
+						const formData = new FormData();
+						formData.append('file', file);
+
+						const response = await fetch('/api/process', {method: 'POST', body: formData});
+						const data = await response.json();
+
+						if(!response.ok){
+							throw new Error(data.detail || 'Failed to process file.');
+						}
+
+						const dataset = data.dataset;
+						const datasetPath = `/pointclouds/${dataset}`;
+						const meta = await (await fetch(`${datasetPath}/potree_meta.json`)).json();
+
+						// proj4 has no built-in EPSG database - register whatever CRS the backend detected
+						proj4.defs(meta.epsg, meta.proj4);
+						if(!window.datasetMeta){
+							window.datasetMeta = meta;
+						}
+
+						const {pointcloud} = await Potree.loadPointCloud(`${datasetPath}/metadata.json`, dataset);
+
+						let material = pointcloud.material;
+						material.size = 1;
+						material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+						material.shape = Potree.PointShape.SQUARE;
+						material.activeAttributeName = "rgba";
+
+						this.viewer.scene.addPointCloud(pointcloud);
+						this.viewer.fitToScreen();
+					}catch(err){
+						this.viewer.postError(`${file.name}: ${err.message}`);
+					}finally{
+						message.element.remove();
+					}
+				}
+
+				inputImport.prop("disabled", false);
+				inputImport.val("");
+			});
+		}
 
 		{
 			let elExport = elScene.next().find("#scene_export");
@@ -1573,6 +1631,19 @@ export class Sidebar{
 		});
 
 		lblMoveSpeed.html(this.viewer.getMoveSpeed().toFixed(1));
+
+		{
+			let chkAutoAdjust = $('#chkMoveSpeedAutoAdjust');
+			chkAutoAdjust.prop('checked', this.viewer.getMoveSpeedAutoAdjust());
+
+			chkAutoAdjust.click(() => {
+				this.viewer.setMoveSpeedAutoAdjust(chkAutoAdjust.prop('checked'));
+			});
+
+			this.viewer.addEventListener('move_speed_auto_adjust_changed', (event) => {
+				chkAutoAdjust.prop('checked', this.viewer.getMoveSpeedAutoAdjust());
+			});
+		}
 	}
 
 

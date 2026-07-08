@@ -8,7 +8,7 @@ const path = require('path');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PORT = 8080;
-const UPLOAD_URL = `http://localhost:${PORT}/upload`;
+const ENTRY_URL = `http://localhost:${PORT}/examples/lane_digitize.html`;
 
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-dev-shm-usage');
@@ -53,7 +53,7 @@ function createWindow () {
 		title: 'Lane Digitize Tool',
 	})
 
-	mainWindow.loadURL(UPLOAD_URL);
+	mainWindow.loadURL(ENTRY_URL);
 
 	mainWindow.on('closed', function () {
 		mainWindow = null
@@ -63,7 +63,7 @@ function createWindow () {
 app.on('ready', () => {
 	startBackend();
 
-	waitForServer(UPLOAD_URL, 30000, (err) => {
+	waitForServer(ENTRY_URL, 30000, (err) => {
 		if (err) {
 			console.error(err.message);
 		}

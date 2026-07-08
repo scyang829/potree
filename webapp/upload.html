@@ -40,7 +40,7 @@
 <body>
 	<div class="box">
 		<h1>LAS/LAZ 파일 업로드</h1>
-		<input type="file" id="fileInput" accept=".las,.laz">
+		<input type="file" id="fileInput" accept=".las,.laz" multiple>
 		<br>
 		<button id="uploadBtn">업로드 및 처리 시작</button>
 		<div id="status"></div>
@@ -52,28 +52,37 @@
 		const status = document.getElementById('status');
 
 		uploadBtn.addEventListener('click', async () => {
-			const file = fileInput.files[0];
-			if (!file) {
+			const files = Array.from(fileInput.files);
+			if (files.length === 0) {
 				status.innerHTML = '<span id="error">파일을 선택해주세요.</span>';
 				return;
 			}
 
 			uploadBtn.disabled = true;
-			status.textContent = '업로드 및 처리 중... (지면분류 + 변환, 수 초~수 분 소요)';
 
-			const formData = new FormData();
-			formData.append('file', file);
+			const datasets = [];
 
 			try {
-				const response = await fetch('/api/process', {method: 'POST', body: formData});
-				const data = await response.json();
+				for (let i = 0; i < files.length; i++) {
+					const file = files[i];
+					status.textContent = `업로드 및 처리 중... (${i + 1}/${files.length}: ${file.name})`;
 
-				if (!response.ok) {
-					throw new Error(data.detail || '처리 중 오류가 발생했습니다.');
+					const formData = new FormData();
+					formData.append('file', file);
+
+					const response = await fetch('/api/process', {method: 'POST', body: formData});
+					const data = await response.json();
+
+					if (!response.ok) {
+						throw new Error(`${file.name}: ${data.detail || '처리 중 오류가 발생했습니다.'}`);
+					}
+
+					datasets.push(data.dataset);
 				}
 
 				status.textContent = '완료! 뷰어로 이동합니다...';
-				window.location.href = `/examples/lane_digitize.html?dataset=${encodeURIComponent(data.dataset)}`;
+				const datasetParam = datasets.map(encodeURIComponent).join(',');
+				window.location.href = `/examples/lane_digitize.html?dataset=${datasetParam}`;
 			} catch (err) {
 				status.innerHTML = `<span id="error">${err.message}</span>`;
 				uploadBtn.disabled = false;

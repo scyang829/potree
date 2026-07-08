@@ -8,6 +8,7 @@ Run with:
 """
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -109,9 +110,12 @@ async def process_pointcloud(file: UploadFile = File(...)):
 		out_dir = POINTCLOUDS_DIR / dataset_id
 		out_dir.mkdir(parents=True, exist_ok=True)
 
+		# The bundled binary needs its bundled liblaszip.so (unversioned name), which isn't on the
+		# system loader path by default even when a system liblaszip is installed under a versioned name.
+		env = {**os.environ, "LD_LIBRARY_PATH": str(POTREE_CONVERTER.parent)}
 		result = subprocess.run(
 			[str(POTREE_CONVERTER), str(source_for_conversion), "-o", str(out_dir), "--projection", epsg],
-			capture_output=True, text=True,
+			capture_output=True, text=True, env=env,
 		)
 		if result.returncode != 0:
 			shutil.rmtree(out_dir, ignore_errors=True)

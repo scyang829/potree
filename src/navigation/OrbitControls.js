@@ -214,7 +214,9 @@ export class OrbitControls extends EventDispatcher{
 				this.scene.view.position.z = (1 - t) * startPos.z + t * targetPos.z;
 
 				this.scene.view.radius = (1 - t) * startRadius + t * targetRadius;
-				this.viewer.setMoveSpeed(this.scene.view.radius);
+				if(this.viewer.getMoveSpeedAutoAdjust()){
+					this.viewer.setMoveSpeed(this.scene.view.radius);
+				}
 			});
 
 			tween.onComplete(() => {
@@ -275,7 +277,7 @@ export class OrbitControls extends EventDispatcher{
 			view.position.copy(position);
 		}
 
-		{
+		if(this.viewer.getMoveSpeedAutoAdjust()){
 			let speed = view.radius;
 			this.viewer.setMoveSpeed(speed);
 		}
